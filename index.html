@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trust-opoly: The REIT & InvIT Simulation</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f0f4f8; 
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            min-height: 100vh;
+            margin: 0;
+        }
+
+        #game-container {
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+            align-items: center;
+        }
+
+        /* --- Game Board --- */
+        #game-board {
+            display: grid;
+            grid-template-columns: 130px repeat(3, 110px) 130px;
+            grid-template-rows: 130px repeat(3, 110px) 130px;
+            gap: 5px;
+            background-color: #fdf7e4;
+            border: 5px solid #d4b256;
+            position: relative;
+            border-radius: 10px;
+        }
+
+        .square {
+            background-color: #c8e6c9; 
+            border: 2px solid #81c784;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            font-weight: 700;
+            padding: 5px;
+            box-sizing: border-box;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+
+        .corner { font-size: 16px; }
+        .property { cursor: pointer; }
+        .property .price {
+            font-size: 11px;
+            font-weight: normal;
+            margin-top: 5px;
+            color: #2e7d32;
+        }
+        .reit { border-top: 10px solid #0277bd; }
+        .invit { border-top: 10px solid #d84315; }
+        
+        .chance { background-color: #fff9c4; font-size: 26px; color: #f57f17; border-color: #fbc02d; }
+        .quiz { background-color: #e1bee7; font-size: 26px; color: #6a1b9a; border-color: #ab47bc; }
+        
+        /* --- JAIL CELL STYLES --- */
+        .go-to-jail { color: #d32f2f; }
+        .jail-visit {
+            background: #bdbdbd;
+            color: #212121;
+            font-size: 18px;
+            font-weight: 900;
+            overflow: hidden;
+            border: 2px solid #424242;
+            justify-content: space-around;
+            padding: 10px 5px;
+        }
+        .jail-bars-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 90%;
+            height: 40px;
+            border-top: 5px solid #424242;
+            border-bottom: 5px solid #424242;
+        }
+        .jail-bar { width: 5px; height: 100%; background-color: #424242; }
+        
+        /* --- BOARD POSITIONING --- */
+        #sq-1  { grid-column: 1 / 2; grid-row: 5 / 6; } 
+        #sq-16 { grid-column: 2 / 3; grid-row: 5 / 6; } 
+        #sq-15 { grid-column: 3 / 4; grid-row: 5 / 6; } 
+        #sq-14 { grid-column: 4 / 5; grid-row: 5 / 6; } 
+        #sq-13 { grid-column: 5 / 6; grid-row: 5 / 6; } 
+        #sq-2  { grid-column: 1 / 2; grid-row: 4 / 5; } 
+        #sq-3  { grid-column: 1 / 2; grid-row: 3 / 4; } 
+        #sq-4  { grid-column: 1 / 2; grid-row: 2 / 3; } 
+        #sq-5  { grid-column: 1 / 2; grid-row: 1 / 2; } 
+        #sq-6  { grid-column: 2 / 3; grid-row: 1 / 2; } 
+        #sq-7  { grid-column: 3 / 4; grid-row: 1 / 2; } 
+        #sq-8  { grid-column: 4 / 5; grid-row: 1 / 2; } 
+        #sq-9  { grid-column: 5 / 6; grid-row: 1 / 2; } 
+        #sq-10 { grid-column: 5 / 6; grid-row: 2 / 3; } 
+        #sq-11 { grid-column: 5 / 6; grid-row: 3 / 4; } 
+        #sq-12 { grid-column: 5 / 6; grid-row: 4 / 5; } 
+        
+        .dummy { background: #fdf7e4; border: none; }
+        #dummy-5 { grid-column: 3 / 4; grid-row: 3 / 4; background-color: #c8e6c9; border: 2px solid #81c784; border-radius: 4px; font-size: 18px; font-weight: 700; color: #2e7d32; display: flex; align-items: center; justify-content: center; }
+
+        #player-token {
+            position: absolute;
+            top: 85%;
+            left: 5%;
+            width: 25px;
+            height: 25px;
+            background-color: #d32f2f;
+            border: 3px solid #8b0000;
+            border-radius: 50%;
+            z-index: 10;
+            transition: all 0.5s ease-in-out;
+        }
+
+        #info-panel {
+            width: 630px;
+            padding: 20px;
+            background-color: #e8f5e9;
+            border: 2px solid #a5d6a7;
+            border-radius: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+        
+        #game-controls h2 { margin: 0; color: #2e7d32; }
+        #player-cash { display: none; }
+        #player-props h3 { margin-top: 0; border-bottom: 2px solid #a5d6a7; padding-bottom: 5px; color: #2e7d32; }
+        #player-props ul { list-style: none; padding: 0; max-height: 150px; overflow-y: auto; }
+        #player-props li { background: #fff; padding: 8px; margin-bottom: 5px; border-radius: 5px; border: 1px solid #ddd; font-size: 14px; }
+        
+        button { background-color: #4CAF50; color: white; padding: 12px 20px; border: none; border-radius: 5px; cursor: pointer; font-weight: 700; transition: 0.3s; }
+        button:hover { background-color: #45a049; transform: translateY(-1px); }
+        button:disabled { background-color: #ccc; cursor: not-allowed; }
+
+        /* --- Modals --- */
+        .modal { display: none; position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); justify-content: center; align-items: center; padding: 10px; }
+        .modal-content { background-color: #fff; padding: 30px; border-radius: 10px; text-align: center; width: 90%; max-width: 450px; animation: fadeIn 0.3s; }
+        .modal-buttons { margin-top: 20px; display: flex; flex-direction: column; gap: 10px; }
+        #quiz-options { display: flex; flex-direction: column; gap: 10px; margin: 20px 0; }
+        #quiz-options button { background-color: #0277bd; }
+        @keyframes fadeIn { from {opacity: 0; transform: scale(0.9);} to {opacity: 1; transform: scale(1);} }
+    </style>
+</head>
+<body>
+
+    <div id="game-container">
+        <div id="game-board">
+            <div id="player-token"></div>
+            
+            <div class="square corner" id="sq-1">START<div class="price">Collect ₹15,000</div></div>
+            <div class="square property reit" id="sq-16">Embassy Office<div class="price">₹425/share</div></div>
+            <div class="square quiz" id="sq-15">?</div>
+            <div class="square chance" id="sq-14">🎲</div>
+            <div class="square corner jail-visit" id="sq-13">IN JAIL<div class="jail-bars-container"><span class="jail-bar"></span><span class="jail-bar"></span><span class="jail-bar"></span><span class="jail-bar"></span></div></div>
+
+            <div class="square property invit" id="sq-2">Power Grid<div class="price">₹97/share</div></div>
+            <div class="square property reit" id="sq-3">Brookfield<div class="price">₹344/share</div></div>
+            <div class="square property invit" id="sq-4">Nat'l Hwy<div class="price">₹141/share</div></div>
+
+            <div class="square corner go-to-jail" id="sq-5">GO TO JAIL</div>
+            <div class="square chance" id="sq-6">🎲</div>
+            <div class="square quiz" id="sq-7">?</div>
+            <div class="square property reit" id="sq-8">Mindspace Park<div class="price">₹461/share</div></div>
+            
+            <div class="square quiz" id="sq-9">?</div> 
+            <div class="square property reit" id="sq-10">Nexus Select<div class="price">₹165/share</div></div>
+            <div class="square chance" id="sq-11">🎲</div>
+            <div class="square property invit" id="sq-12">Anantham Hwy<div class="price">₹105/share</div></div>
+
+            <div class="dummy"></div><div class="dummy"></div><div class="dummy"></div><div class="dummy"></div>
+            <div id="dummy-5">TRUST-OPOLY</div>
+            <div class="dummy"></div><div class="dummy"></div><div class="dummy"></div><div class="dummy"></div>
+        </div>
+
+        <div id="info-panel">
+            <div id="game-controls">
+                <h2>Portfolio</h2>
+                <div id="game-status" style="margin-bottom: 10px;">Round 1</div>
+                <button id="btn-roll-dice">Roll Dice</button>
+                <div id="dice-result" style="font-size: 18px; margin-top: 10px;"></div>
+                <div id="player-cash">₹100,000</div>
+            </div>
+
+            <div id="player-props">
+                <h3>My Holdings</h3>
+                <ul id="prop-list"><li>No properties yet.</li></ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <div id="property-modal" class="modal"><div class="modal-content"><h3 id="prop-modal-name"></h3><p id="prop-modal-desc"></p><h4 id="prop-modal-total"></h4><div class="modal-buttons"><button id="btn-buy">Buy</button><button id="btn-pass">Pass</button></div></div></div>
+    <div id="event-modal" class="modal"><div class="modal-content"><h3 id="event-modal-title"></h3><p id="event-modal-desc"></p><button id="btn-event-ok" style="margin-top:20px">OK</button></div></div>
+    <div id="quiz-modal" class="modal"><div class="modal-content"><h3>QUIZ TIME!</h3><p id="quiz-question"></p><div id="quiz-options"></div><p id="quiz-feedback"></p></div></div>
+    <div id="owned-property-modal" class="modal"><div class="modal-content"><h3 id="owned-prop-name"></h3><p>Manage your existing holding:</p><div class="modal-buttons"><button id="btn-buy-more">Buy More (at same price)</button><button id="btn-sell">Sell (at 10% premium)</button><button id="btn-pass-owned">Do Nothing</button></div></div></div>
+
+<script>
+    let player = { cash: 100000, position: 1, properties: [], inJail: false };
+    let game = { round: 1, isPlayerTurn: true };
+    
+    const boardPositions = [{top:"85%",left:"5%"},{top:"65%",left:"5%"},{top:"45%",left:"5%"},{top:"25%",left:"5%"},{top:"5%",left:"5%"},{top:"5%",left:"25%"},{top:"5%",left:"45%"},{top:"5%",left:"65%"},{top:"5%",left:"85%"},{top:"25%",left:"85%"},{top:"45%",left:"85%"},{top:"65%",left:"85%"},{top:"85%",left:"85%"},{top:"85%",left:"65%"},{top:"85%",left:"45%"},{top:"85%",left:"25%"}];
+
+    const gameBoard = {
+        1: { type: 'go', name: 'GO' },
+        2: { type: 'property', name: 'Power Grid Infra', cost: 9700, group: 'invit', owned: false },
+        3: { type: 'property', name: 'Brookfield (Industrial)', cost: 17200, group: 'reit', owned: false },
+        4: { type: 'property', name: 'National Highway Infra', cost: 14100, group: 'invit', owned: false },
+        5: { type: 'go-to-jail', name: 'Go To Jail' },
+        6: { type: 'chance', name: 'Chance' },
+        7: { type: 'quiz', name: 'Quiz' },
+        8: { type: 'property', name: 'Mindspace Park', cost: 23050, group: 'reit', owned: false },
+        9: { type: 'quiz', name: 'Quiz' },
+        10: { type: 'property', name: 'Nexus Select Trust', cost: 8250, group: 'reit', owned: false },
+        11: { type: 'chance', name: 'Chance' },
+        12: { type: 'property', name: 'Anantham Highway', cost: 10500, group: 'invit', owned: false },
+        13: { type: 'jail-visit', name: 'In Jail' },
+        14: { type: 'chance', name: 'Chance' }, 
+        15: { type: 'quiz', name: 'Quiz' },
+        16: { type: 'property', name: 'Embassy Office Parks', cost: 21250, group: 'reit', owned: false }
+    };
+
+    const quizQuestions = [
+        { q: "What % of income must a REIT/InvIT distribute to unitholders?", a: "90%", options: ["50%", "75%", "90%", "100%"] },
+        { q: "Who is the 'Sponsor' of a REIT/InvIT?", a: "The company that sets up the trust", options: ["The main investor", "The bank", "The government", "The company that sets up the trust"] },
+        { q: "What does 'WALE' stand for in REITs?", a: "Weighted Average Lease Expiry", options: ["Weekly Average Lease End", "Weighted Average Lease Expiry", "Whole Asset Lease Equity", "Warehouse Asset Loan Expiry"] },
+        { q: "How often must a REIT’s assets be valued?", a: "Every six months", options: ["Every six months", "Once a year", "Every two years", "Only at purchase"] },
+        { q: "Which entity is responsible for supervision and appointing the valuer?", a: "Trustee", options: ["Investment Manager", "Sponsor", "Project Manager", "Trustee"] },
+        { q: "What is the maximum permissible secured borrowing limit for a listed InvIT?", a: "70% of asset value", options: ["70%", "80%", "49%", "60%"] },
+        { q: "What minimum % must a Sponsor hold for the first 3 years?", a: "15%", options: ["25%", "5%", "10%", "15%"] }
+    ];
+    let availableQuiz = [...quizQuestions];
+
+    const chanceCards = [
+        { t: "INTEREST RATE CUT! The RBI cut rates. If you own any assets, collect a Special Distribution of 5%.", c: 'any', a: 'add_pct', val: 0.05 },
+        { t: "ECONOMIC BOOM! If you own any REITs, collect a Bonus Distribution of ₹10,000.", c: 'group', g: 'reit', a: 'add_fixed', val: 10000 },
+        { t: "NEW BLUE-CHIP TENANT! If you own Embassy Office Parks, collect a Special Dividend of ₹5,000.", c: 'spec', p: 'Embassy Office Parks', a: 'add_fixed', val: 5000 },
+        { t: "TARIFF HIKE APPROVED! If you own any InvITs, collect a payout of 2%.", c: 'group', g: 'invit', a: 'add_pct', val: 0.02 },
+        { t: "MARKET RALLY! Asset sale profit. If you own any assets, receive a distribution of 2%.", c: 'any', a: 'add_pct', val: 0.02 },
+        { t: "PROJECT AHEAD OF SCHEDULE! If you own Power Grid Infra, collect a 5% payout.", c: 'spec', p: 'Power Grid Infra', a: 'add_pct', val: 0.05 },
+        { t: "ANCHOR TENANT BANKRUPT! If you own Nexus Select, a dividend cut of 4% is deducted.", c: 'spec', p: 'Nexus Select Trust', a: 'pay_pct', val: 0.04 },
+        { t: "INFLATION SHOCK! If you own any InvITs, a 3% dividend reduction is deducted.", c: 'group', g: 'invit', a: 'pay_pct', val: 0.03 },
+        { t: "UNEXPECTED REPAIRS! Flood damage. If you own Anantham Hwy, a dividend of 6% is deducted.", c: 'spec', p: 'Anantham Highway', a: 'pay_pct', val: 0.06 },
+        { t: "TRAFFIC FORECAST WRONG! If you own any InvITs, a 2.5% dividend is deducted.", c: 'group', g: 'invit', a: 'pay_pct', val: 0.025 },
+        { t: "DEBT REFINANCING FAILURE! If you own any assets, a 6.5% dividend is deducted.", c: 'any', a: 'pay_pct', val: 0.065 },
+        { t: "SPONSOR SCANDAL! If you own any InvITs, a 5.5% dividend is deducted.", c: 'group', g: 'invit', a: 'pay_pct', val: 0.055 },
+        { t: "RENT CONTROL IMPOSED! If you own any REITs, a 3% dividend cut is deducted.", c: 'group', g: 'reit', a: 'pay_pct', val: 0.03 }
+    ];
+    let availableChance = [];
+
+    const $ = (id) => document.getElementById(id);
+
+    function updateUI() {
+        const counts = {}; player.properties.forEach(p => counts[p] = (counts[p] || 0) + 1);
+        $('prop-list').innerHTML = Object.keys(counts).length ? Object.keys(counts).sort().map(p => `<li>${p} (x${counts[p]})</li>`).join('') : "<li>No holdings.</li>";
+        $('game-status').innerText = `Round ${game.round}`;
+    }
+
+    $('btn-roll-dice').onclick = () => {
+        if (!game.isPlayerTurn) return;
+        game.isPlayerTurn = false;
+        $('btn-roll-dice').disabled = true;
+        
+        if (player.inJail) {
+            player.inJail = false;
+            showEvent("Released!", "You paid your dues and are free. Roll next turn.");
+            setTimeout(endTurn, 1500);
+            return;
+        }
+
+        let roll = Math.floor(Math.random() * 6) + 1;
+        $('dice-result').innerText = `Rolling... ${roll}`;
+        setTimeout(() => {
+            let newPos = player.position + roll;
+            if (newPos > 16) { newPos -= 16; player.cash += 15000; showEvent("Passed GO!", "Collected ₹15,000 distributions."); }
+            player.position = newPos;
+            const target = boardPositions[newPos - 1];
+            $('player-token').style.top = target.top;
+            $('player-token').style.left = target.left;
+            setTimeout(handleLanding, 600);
+        }, 800);
+    };
+
+    function handleLanding() {
+        const sq = gameBoard[player.position];
+        if (sq.type === 'property') {
+            if (sq.owned) {
+                $('owned-prop-name').innerText = sq.name;
+                $('owned-property-modal').style.display = 'flex';
+                $('btn-buy-more').onclick = () => { player.cash -= sq.cost; player.properties.push(sq.name); showEvent("Buy Order", `Bought more shares of ${sq.name}.`); $('owned-property-modal').style.display='none'; setTimeout(endTurn, 1000); };
+                $('btn-sell').onclick = () => { player.cash += Math.floor(sq.cost * 1.1); player.properties.splice(player.properties.indexOf(sq.name), 1); if(!player.properties.includes(sq.name)) sq.owned = false; showEvent("Sell Order", `Liquidated shares of ${sq.name} at premium.`); $('owned-property-modal').style.display='none'; setTimeout(endTurn, 1000); };
+                $('btn-pass-owned').onclick = () => { $('owned-property-modal').style.display='none'; endTurn(); };
+            } else {
+                $('prop-modal-name').innerText = sq.name;
+                $('prop-modal-desc').innerText = `Group: ${sq.group.toUpperCase()}`;
+                $('prop-modal-total').innerText = `Total Cost: ₹${sq.cost.toLocaleString()}`;
+                $('property-modal').style.display = 'flex';
+                $('btn-buy').onclick = () => { player.cash -= sq.cost; player.properties.push(sq.name); sq.owned = true; $('property-modal').style.display='none'; endTurn(); };
+                $('btn-pass').onclick = () => { $('property-modal').style.display='none'; endTurn(); };
+            }
+        } else if (sq.type === 'quiz') {
+            if(!availableQuiz.length) availableQuiz = [...quizQuestions];
+            let q = availableQuiz.splice(Math.floor(Math.random()*availableQuiz.length), 1)[0];
+            $('quiz-question').innerText = q.q;
+            $('quiz-options').innerHTML = q.options.sort(()=>Math.random()-0.5).map(o => `<button onclick="checkQuiz('${o}','${q.a}')">${o}</button>`).join('');
+            $('quiz-feedback').innerText = "";
+            $('quiz-modal').style.display = 'flex';
+        } else if (sq.type === 'chance') {
+            if(!availableChance.length) availableChance = [...chanceCards].sort(()=>Math.random()-0.5);
+            let c = availableChance.pop();
+            let has = false;
+            if(c.c === 'any') has = player.properties.length > 0;
+            else if(c.c === 'group') has = player.properties.some(p => Object.values(gameBoard).find(s => s.name === p && s.group === c.g));
+            else if(c.c === 'spec') has = player.properties.includes(c.p);
+            
+            let msg = c.t;
+            if(has) {
+                let amt = c.a.includes('pct') ? Math.floor(player.cash * c.val) : c.val;
+                if(c.a.startsWith('add')) { player.cash += amt; msg += ` +₹${amt.toLocaleString()}`; }
+                else { player.cash -= amt; msg += ` -₹${amt.toLocaleString()}`; }
+            } else { msg += " ...but you don't own the required assets."; }
+            showEvent("CHANCE", msg);
+            setTimeout(endTurn, 2500);
+        } else if (sq.type === 'go-to-jail') {
+            player.inJail = true; player.position = 13;
+            const target = boardPositions[12]; $('player-token').style.top = target.top; $('player-token').style.left = target.left;
+            showEvent("TAX EVASION", "You failed to disclose distributions. Go to Jail!");
+            setTimeout(endTurn, 2000);
+        } else { endTurn(); }
+    }
+
+    window.checkQuiz = (choice, correct) => {
+        let win = choice === correct;
+        player.cash += win ? 5000 : -5000;
+        $('quiz-feedback').innerText = win ? "Correct! +₹5,000" : `Incorrect. Correct: ${correct}. -₹5,000`;
+        $('quiz-feedback').style.color = win ? "green" : "red";
+        setTimeout(() => { $('quiz-modal').style.display='none'; endTurn(); }, 2000);
+    };
+
+    function endTurn() { game.round++; updateUI(); $('btn-roll-dice').disabled = false; game.isPlayerTurn = true; }
+    function showEvent(t, d) { $('event-modal-title').innerText = t; $('event-modal-desc').innerText = d; $('event-modal').style.display = 'flex'; }
+    $('btn-event-ok').onclick = () => $('event-modal').style.display = 'none';
+
+    updateUI();
+</script>
+</body>
+</html>

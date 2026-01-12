@@ -1,5 +1,5 @@
 # trustopoly
-Here is the full text for your GitHub README. You can copy and paste this directly into your GitHub README.md file:
+
 
 Trust-opoly: An Interactive REIT & InvIT Financial Simulation
 Trust-opoly is a strategic investment simulation built to educate users on the high-yield landscapes of Indian Real Estate Investment Trusts (REITs) and Infrastructure Investment Trusts (InvITs). Unlike traditional games, Trust-opoly integrates real-world financial data, SEBI regulations, and macroeconomic variables to simulate a professional fund management environment.
